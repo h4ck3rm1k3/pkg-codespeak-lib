@@ -1,3 +1,10 @@
+codespeak-lib (1.4.15-2) UNRELEASED; urgency=low
+
+  * Enable test suite (as DEP-8 tests). Patch and thanks to Michael Terry
+    <michael.terry@canonical.com> and Barry Warsaw (barry). (Closes: #678398)
+
+ -- Chris Lamb <lamby@debian.org>  Mon, 22 Jul 2013 19:21:25 +0100
+
 codespeak-lib (1.4.15-1) unstable; urgency=low
 
   * New upstream version. (Closes: #716782)
