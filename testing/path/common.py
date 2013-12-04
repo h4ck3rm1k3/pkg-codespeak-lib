@@ -38,6 +38,9 @@ class CommonFSTests(object):
         p = path1.join('sample')
         p = p + 'dir'
         assert p.check()
+        assert p.exists()
+        assert p.isdir()
+        assert not p.isfile()
 
     def test_parts(self, path1):
         newpath = path1.join('sampledir', 'otherfile')
@@ -93,12 +96,18 @@ class CommonFSTests(object):
     def test_exists(self, path1):
         assert path1.join("samplefile").check()
         assert path1.join("samplefile").check(exists=1)
+        assert path1.join("samplefile").exists()
+        assert path1.join("samplefile").isfile()
+        assert not path1.join("samplefile").isdir()
 
     def test_dir(self, path1):
         #print repr(path1.join("sampledir"))
         assert path1.join("sampledir").check(dir=1)
         assert path1.join('samplefile').check(notdir=1)
         assert not path1.join("samplefile").check(dir=1)
+        assert path1.join("samplefile").exists()
+        assert not path1.join("samplefile").isdir()
+        assert path1.join("samplefile").isfile()
 
     def test_fnmatch_file(self, path1):
         assert path1.join("samplefile").check(fnmatch='s*e')
@@ -378,6 +387,11 @@ class CommonFSTests(object):
         p = path1.join('to')
         p.remove()
         assert not p.check()
+
+    def test_ensure_dir(self, path1):
+        b = path1.ensure_dir("001", "002")
+        assert b.basename == "002"
+        assert b.isdir()
 
     def test_mkdir_and_remove(self, path1):
         tmpdir = path1
