@@ -1,3 +1,9 @@
+codespeak-lib (1.4.18-1) UNRELEASED; urgency=low
+
+  * New upstream release. (Closes: #731354)
+
+ -- Chris Lamb <lamby@debian.org>  Wed, 04 Dec 2013 14:51:33 +0000
+
 codespeak-lib (1.4.15-2) unstable; urgency=low
 
   * Enable test suite (as DEP-8 tests). Patch and thanks to Michael Terry
