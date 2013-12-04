@@ -1,3 +1,40 @@
+Changes between 1.4.17 and 1.4.18
+==================================================
+
+- introduce path.ensure_dir() as a synonym for ensure(..., dir=1)
+
+- some unicode/python3 related fixes wrt to path manipulations
+  (if you start passing unicode particular in py2 you might 
+  still get problems, though)
+
+Changes between 1.4.16 and 1.4.17
+==================================================
+
+- make py.io.TerminalWriter() prefer colorama if it is available
+  and avoid empty lines when separator-lines are printed by
+  being defensive and reducing the working terminalwidth by 1
+
+- introduce optional "expanduser" argument to py.path.local
+  to that local("~", expanduser=True) gives the home
+  directory of "user".
+
+Changes between 1.4.15 and 1.4.16
+==================================================
+
+- fix issue35 - define __gt__ ordering between a local path
+  and strings
+
+- fix issue36 - make chdir() work even if os.getcwd() fails.
+
+- add path.exists/isdir/isfile/islink shortcuts
+
+- introduce local path.as_cwd() context manager.
+
+- introduce p.write(ensure=1) and p.open(ensure=1)
+  where ensure triggers creation of neccessary parent
+  dirs.
+
+
 Changes between 1.4.14 and 1.4.15
 ==================================================
 

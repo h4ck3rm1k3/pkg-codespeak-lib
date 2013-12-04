@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import with_statement
 import py
 import pytest
 import os, sys
@@ -75,13 +78,40 @@ class TestLocalPath(common.CommonFSTests):
     def test_initialize_curdir(self):
         assert str(local()) == py.std.os.getcwd()
 
+    @skiponwin32
+    def test_chdir_gone(self, path1):
+        p = path1.ensure("dir_to_be_removed", dir=1)
+        p.chdir()
+        p.remove()
+        pytest.raises(py.error.ENOENT, py.path.local)
+        assert path1.chdir() is None
+        assert os.getcwd() == str(path1)
+
+    def test_as_cwd(self, path1):
+        dir = path1.ensure("subdir", dir=1)
+        old = py.path.local()
+        with dir.as_cwd() as x:
+            assert x == old
+            assert py.path.local() == dir
+        assert os.getcwd() == str(old)
+
+    def test_as_cwd_exception(self, path1):
+        old = py.path.local()
+        dir = path1.ensure("subdir", dir=1)
+        with pytest.raises(ValueError):
+            with dir.as_cwd():
+                raise ValueError()
+        assert old == py.path.local()
+
     def test_initialize_reldir(self, path1):
-        old = path1.chdir()
-        try:
+        with path1.as_cwd():
             p = local('samplefile')
             assert p.check()
-        finally:
-            old.chdir()
+
+    @pytest.mark.xfail("sys.version_info < (2,6) and sys.platform == 'win32'")
+    def test_tilde_expansion(self):
+        p = py.path.local("~", expanduser=True)
+        assert p == os.path.expanduser("~")
 
     def test_eq_with_strings(self, path1):
         path1 = path1.join('sampledir')
@@ -91,6 +121,31 @@ class TestLocalPath(common.CommonFSTests):
         path3 = path1.join('samplefile')
         assert path3 != path2
         assert path2 != path3
+
+    def test_eq_with_none(self, path1):
+        assert path1 != None
+
+    def test_gt_with_strings(self, path1):
+        path2 = path1.join('sampledir')
+        path3 = str(path1.join("ttt"))
+        assert path3 > path2
+        assert path2 < path3
+        assert path2 < "ttt"
+        assert "ttt" > path2
+        path4 = path1.join("aaa")
+        l = [path2, path4,path3]
+        assert sorted(l) == [path4, path2, path3]
+
+    def test_open_and_ensure(self, path1):
+        p = path1.join("sub1", "sub2", "file")
+        with p.open("w", ensure=1) as f:
+            f.write("hello")
+        assert p.read() == "hello"
+
+    def test_write_and_ensure(self, path1):
+        p = path1.join("sub1", "sub2", "file")
+        p.write("hello", ensure=1)
+        assert p.read() == "hello"
 
     @py.test.mark.multi(bin=(False, True))
     def test_dump(self, tmpdir, bin):
@@ -442,19 +497,23 @@ def test_isimportable():
     assert not isimportable("x-1")
     assert not isimportable("x:1")
 
-def test_homedir():
+def test_homedir_from_HOME(monkeypatch):
+    path = os.getcwd()
+    monkeypatch.setenv("HOME", path)
+    assert py.path.local._gethomedir() == py.path.local(path)
+
+def test_homedir_not_exists(monkeypatch):
+    monkeypatch.delenv("HOME", raising=False)
+    monkeypatch.delenv("HOMEDRIVE", raising=False)
     homedir = py.path.local._gethomedir()
-    assert homedir.check(dir=1)
+    assert homedir is None
 
 def test_samefile(tmpdir):
     assert tmpdir.samefile(tmpdir)
     p = tmpdir.ensure("hello")
     assert p.samefile(p)
-    old = p.dirpath().chdir()
-    try:
+    with p.dirpath().as_cwd():
         assert p.samefile(p.basename)
-    finally:
-        old.chdir()
     if sys.platform == "win32":
         p1 = p.__class__(str(p).lower())
         p2 = p.__class__(str(p).upper())
@@ -510,12 +569,9 @@ class TestWINLocalPath:
     def test_sysfind_in_currentdir(self, path1):
         cmd = py.path.local.sysfind('cmd')
         root = cmd.new(dirname='', basename='') # c:\ in most installations
-        old = root.chdir()
-        try:
+        with root.as_cwd():
             x = py.path.local.sysfind(cmd.relto(root))
             assert x.check(file=1)
-        finally:
-            old.chdir()
 
 class TestPOSIXLocalPath:
     pytestmark = skiponwin32
@@ -542,6 +598,7 @@ class TestPOSIXLocalPath:
         linkpath.mksymlinkto(filepath)
         assert linkpath.check(file=1)
         assert not linkpath.check(link=0, file=1)
+        assert linkpath.islink()
 
     def test_symlink_relative(self, tmpdir):
         linkpath = tmpdir.join('test')
@@ -712,4 +769,27 @@ class TestPOSIXLocalPath:
         owner = path1.stat().owner
         group = path1.stat().group
         path1.chown(owner, group)
+
+
+class TestUnicodePy2Py3:
+    def test_join_ensure(self, tmpdir):
+        x = py.path.local(tmpdir.strpath)
+        part = py.builtin._totext("hällo", "utf8")
+        y = x.ensure(part)
+        assert x.join(part) == y
+
+    def test_listdir(self, tmpdir):
+        x = py.path.local(tmpdir.strpath)
+        part = py.builtin._totext("hällo", "utf8")
+        y = x.ensure(part)
+        assert x.listdir(part)[0] == y
+
+    @pytest.mark.xfail(reason="changing read/write might break existing usages")
+    def test_read_write(self, tmpdir):
+        x = tmpdir.join("hello")
+        part = py.builtin._totext("hällo", "utf8")
+        x.write(part)
+        assert x.read() == part
+        x.write(part.encode(sys.getdefaultencoding()))
+        assert x.read() == part.encode(sys.getdefaultencoding())
 
