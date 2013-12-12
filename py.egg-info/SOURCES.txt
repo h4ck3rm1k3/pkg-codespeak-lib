@@ -3,7 +3,6 @@ LICENSE
 MANIFEST.in
 README.txt
 conftest.py
-distribute_setup.py
 setup.py
 tox.ini
 doc/Makefile

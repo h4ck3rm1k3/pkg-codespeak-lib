@@ -1,18 +1,13 @@
 import os, sys
 
-try:
-    from setuptools import setup
-except ImportError:
-    from distribute_setup import use_setuptools
-    use_setuptools()
-    from setuptools import setup
+from setuptools import setup
 
 def main():
     setup(
         name='py',
         description='library with cross-python path, ini-parsing, io, code, log facilities',
         long_description = open('README.txt').read(),
-        version='1.4.18',
+        version='1.4.19',
         url='http://pylib.readthedocs.org/',
         license='MIT license',
         platforms=['unix', 'linux', 'osx', 'cygwin', 'win32'],

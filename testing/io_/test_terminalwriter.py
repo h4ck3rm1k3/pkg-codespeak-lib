@@ -218,14 +218,18 @@ def test_terminal_with_callable_write_and_flush():
     assert l == set(["2"])
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="win32 has no native ansi")
 def test_attr_hasmarkup():
     tw = py.io.TerminalWriter(stringio=True)
     assert not tw.hasmarkup
     tw.hasmarkup = True
     tw.line("hello", bold=True)
     s = tw.stringio.getvalue()
-    assert len(s) > len("hello")
+    assert len(s) > len("hello\n")
+    assert '\x1b[1m' in s
+    assert '\x1b[0m' in s
 
+@pytest.mark.skipif(sys.platform == "win32", reason="win32 has no native ansi")
 def test_ansi_print():
     # we have no easy way to construct a file that
     # represents a terminal
@@ -234,4 +238,27 @@ def test_ansi_print():
     py.io.ansi_print("hello", 0x32, file=f)
     text2 = f.getvalue()
     assert text2.find("hello") != -1
-    assert len(text2) >= len("hello")
+    assert len(text2) >= len("hello\n")
+    assert '\x1b[50m' in text2
+    assert '\x1b[0m' in text2
+
+def test_should_do_markup_PY_COLORS_eq_1(monkeypatch):
+    monkeypatch.setitem(os.environ, 'PY_COLORS', '1')
+    tw = py.io.TerminalWriter(stringio=True)
+    assert tw.hasmarkup
+    tw.line("hello", bold=True)
+    s = tw.stringio.getvalue()
+    assert len(s) > len("hello\n")
+    assert '\x1b[1m' in s
+    assert '\x1b[0m' in s
+
+def test_should_do_markup_PY_COLORS_eq_0(monkeypatch):
+    monkeypatch.setitem(os.environ, 'PY_COLORS', '0')
+    f = py.io.TextIO()
+    f.isatty = lambda: True
+    tw = py.io.TerminalWriter(file=f)
+    assert not tw.hasmarkup
+    tw.line("hello", bold=True)
+    s = f.getvalue()
+    assert s == "hello\n"
+
