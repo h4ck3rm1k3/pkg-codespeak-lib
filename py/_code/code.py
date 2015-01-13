@@ -369,7 +369,7 @@ class ExceptionInfo(object):
         """Format the exception part of a traceback
 
         Since traceback.format_exception_only() destroys unicode on
-        python 2 we handle plain AsssertionErrors separately here.
+        python 2 we handle plain AssertionErrors separately here.
         """
         if isinstance(value, AssertionError) and hasattr(value, 'msg'):
             return ['AssertionError: ' + value.msg]
